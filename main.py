@@ -11,9 +11,13 @@ import aiohttp
 from typing import Final # wow i forgot how strange this is to declare finals in python
 MAX_AMT_OF_IDEAS: Final = 3
 
+from keep_alive import keep_alive # this tricks the host into running the bot 24/7
+
 ### DISCORD TOKEN
 load_dotenv()
 token = os.getenv('DISCORD_TOKEN')
+
+keep_alive() ## little sneaky trick
 
 ### MONGO URI
 MONGO_URI = os.getenv('MONGO_URI')
