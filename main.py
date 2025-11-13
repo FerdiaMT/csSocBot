@@ -156,61 +156,79 @@ async def submit(interaction: discord.Interaction, idea: str): ## on submit
 
 @bot.tree.command(name="results", description="(ADMIN ONLY) View current voting results")
 @app_commands.default_permissions(administrator=True)
-async def results(interaction: discord.Interaction): ## results command for admins
-    # first check they have administrator perms, we may have to change this cus cssoc discords perms look funny, ill find out how to swap to admin role if it doesnt work
-    if not interaction.user.guild_permissions.administrator:
-        await interaction.response.send_message(">:C hey, no cheating, only admins can see this!!!! ",  ephemeral=True)
-        return
+async def results(interaction: discord.Interaction):
+    try:
+        print(f"Results command called by {interaction.user.name}")
 
-    # fill ideas list with results
-    ideas_list = []
-    async for idea in ideas_collection.find({}):
-        yes_count = idea.get('yes_count', 0)
-        no_count = idea.get('no_count', 0)
-        net_score = yes_count - no_count
+        # defer so we get longer to calc result
+        await interaction.response.defer(ephemeral=True)
+        print("Response deferred")
 
-        ideas_list.append({
-            'idea': idea,
-            'net_score': net_score,
-            'yes_count': yes_count,
-            'no_count': no_count
-        })
+        # Check if user is admin
+        if not interaction.user.guild_permissions.administrator:
+            await interaction.followup.send(">:C hey, no cheating, only admins can see this!!!! ", ephemeral=True)
+            return
 
-    if not ideas_list:
-        await interaction.response.send_message("nothing added to ideas yet", ephemeral=True)
-        return
+        print("Fetching ideas from database...")
+        # fill ideas list with results
+        ideas_list = []
+        async for idea in ideas_collection.find({}):
+            yes_count = idea.get('yes_count', 0)
+            no_count = idea.get('no_count', 0)
+            net_score = yes_count - no_count
 
-    # sort by net score
-    ideas_list.sort(key=lambda x: x['net_score'], reverse=True)
+            ideas_list.append({
+                'idea': idea,
+                'net_score': net_score,
+                'yes_count': yes_count,
+                'no_count': no_count
+            })
 
+        print(f"Found {len(ideas_list)} ideas")
 
+        if not ideas_list:
+            await interaction.followup.send("nothing added to ideas yet", ephemeral=True)
+            return
 
-    # create result blob
-    embed = discord.Embed(
-        title="super secret voting results",
-        description="Current vote counts for all submitted ideas",
-        color=discord.Color.gold()
-    )
+        # sort by net score
+        ideas_list.sort(key=lambda x: x['net_score'], reverse=True)
 
-    for idx, idea in enumerate(ideas_list, 1):
-        yes_count = idea.get('yes_count', 0)
-        no_count = idea.get('no_count', 0)
-        total_votes = yes_count + no_count
-        net_score = yes_count - no_count
-
-        username = idea.get('username', 'Unknown')
-        idea_text = idea.get('idea', 'No description')
-
-        embed.add_field(
-            name=f"#{idx} - {idea_text[:100]} - Net Score: {net_score}",
-            value=f" By: {username}\n✅ Yes: {yes_count} | ❌ No: {no_count}| Total: {total_votes}",
-            inline=False
+        print("Creating embed...")
+        # create result blob
+        embed = discord.Embed(
+            title="super secret voting results",
+            description="Current vote counts for all submitted ideas",
+            color=discord.Color.gold()
         )
 
-    embed.set_footer(text=f"Total ideas: {len(ideas_list)}")
+        for idx, item in enumerate(ideas_list, 1):
+            idea_data = item['idea']
+            yes_count = item['yes_count']
+            no_count = item['no_count']
+            net_score = item['net_score']
+            total_votes = yes_count + no_count
 
-    # send result
-    await interaction.response.send_message(embed=embed, ephemeral=True)
+            username = idea_data.get('username', 'Unknown')
+            idea_text = idea_data.get('idea', 'No description')
+
+            embed.add_field(
+                name=f"#{idx} - {idea_text[:100]}",
+                value=f"By: {username}\n✅ Yes: {yes_count} | ❌ No: {no_count} | **Net: {net_score}** | Total: {total_votes}",
+                inline=False
+            )
+
+        embed.set_footer(text=f"Total ideas: {len(ideas_list)}")
+
+        await interaction.followup.send(embed=embed, ephemeral=True)
+
+    except Exception as e:
+        print(f"ERROR in results command: {e}")
+        import traceback
+        traceback.print_exc()
+        try:
+            await interaction.followup.send(f"An error occurred: {str(e)}", ephemeral=True)
+        except:
+            pass
 
 
 @bot.event
@@ -265,6 +283,10 @@ class NoSSLConnector(aiohttp.TCPConnector):
 
 aiohttp.TCPConnector = NoSSLConnector
 
+
 keep_alive() ## little sneaky trick
+
+
 # Run bot
+print("bot now runs")
 bot.run(token, log_handler=handler, log_level=logging.DEBUG)
