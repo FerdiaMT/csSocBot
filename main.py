@@ -155,7 +155,6 @@ async def submit(interaction: discord.Interaction, idea: str): ## on submit
 
 
 @bot.tree.command(name="results", description="(ADMIN ONLY) View current voting results")
-@app_commands.default_permissions(administrator=True)
 async def results(interaction: discord.Interaction):
     try:
         print(f"Results command called by {interaction.user.name}")
@@ -163,9 +162,9 @@ async def results(interaction: discord.Interaction):
         # defer so we get longer to calc result
         await interaction.response.defer(ephemeral=True)
         print("Response deferred")
-
-        # Check if user is admin
-        if not interaction.user.guild_permissions.administrator:
+        
+        ADMIN_ROLE_ID = 760156780822003743
+        if not any(role.id == ADMIN_ROLE_ID for role in interaction.user.roles):
             await interaction.followup.send(">:C hey, no cheating, only admins can see this!!!! ", ephemeral=True)
             return
 

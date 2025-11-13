@@ -4,7 +4,6 @@ import logging
 
 app = Flask('')
 
-# Disable Flask logging
 log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
 
