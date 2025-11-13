@@ -102,13 +102,16 @@ class VoteView(discord.ui.View):
             }
         )
 
-
 @bot.tree.command(name="submit", description="Submit a theme idea for the game jam (You can submit a maximum of 3 and cannot change a submission") ## command for /submit
 @app_commands.describe(idea="Your theme idea") # the description (this stinks rn)
 
 async def submit(interaction: discord.Interaction, idea: str): ## on submit
     user_id = interaction.user.id
-
+    
+    ALLOWED_CHANNEL_ID = 1438484588388159508
+    if interaction.channel_id != ALLOWED_CHANNEL_ID:
+        await interaction.response.send_message("this command can only be used in submission chat ", ephemeral=True)
+        return
     # first check amount of ideas submitted by user
     user_data = await users_collection.find_one({"user_id": user_id})
     idea_count = user_data.get('idea_count', 0) if user_data else 0
