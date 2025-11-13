@@ -17,7 +17,7 @@ from keep_alive import keep_alive # this tricks the host into running the bot 24
 load_dotenv()
 token = os.getenv('DISCORD_TOKEN')
 
-keep_alive() ## little sneaky trick
+
 
 ### MONGO URI
 MONGO_URI = os.getenv('MONGO_URI')
@@ -103,7 +103,7 @@ class VoteView(discord.ui.View):
         )
 
 
-@bot.tree.command(name="submit", description="Submit a theme idea for the game jam (You can submit a maximum of 3. You cannot change a submission once its entered)") ## command for /submit
+@bot.tree.command(name="submit", description="Submit a theme idea for the game jam (You can submit a maximum of 3 and cannot change a submission") ## command for /submit
 @app_commands.describe(idea="Your theme idea") # the description (this stinks rn)
 
 async def submit(interaction: discord.Interaction, idea: str): ## on submit
@@ -215,17 +215,7 @@ async def results(interaction: discord.Interaction): ## results command for admi
 
 @bot.event
 async def on_ready():
-    # FOR IF THE BOTS CONNECTION JUST DIES, refill in values
-    print("refilling values")
-    async for idea in ideas_collection.find({}):
-        bot.add_view(VoteView(idea['_id']))
-
-    # sync the / commands
-    synced = await bot.tree.sync()
-    print(f'{bot.user} is active')
-    print(f'{len(synced)} commands on')
-    for cmd in synced:
-        print(f' cmds avaible : {cmd.name}')
+    print("on_ready triggered")
 
     # mongo db connection test
     try:
@@ -234,6 +224,34 @@ async def on_ready():
     except Exception as e:
         print(f"MongoDB fail : {e}")
 
+    print("About to sync commands...")
+
+    # sync the / commands
+    try:
+        synced = await bot.tree.sync()
+        print(f"Commands synced: {len(synced)}")
+    except Exception as e:
+        print(f"Sync failed: {e}")
+        import traceback
+        traceback.print_exc()
+
+    print(f'{bot.user} is active')
+    print(f'{len(synced)} commands on')
+    for cmd in synced:
+        print(f' cmds available : {cmd.name}')
+
+    # FOR IF THE BOTS CONNECTION JUST DIES, refill in values
+    print("refilling values")
+    idea_count = 0
+    try:
+        async for idea in ideas_collection.find({}):
+            bot.add_view(VoteView(idea['_id']))
+            idea_count += 1
+        print(f"Loaded {idea_count} persistent views")
+    except Exception as e:
+        print(f"Error loading views: {e}")
+
+    print("everything set up")
 
 # turn of ssl for localhost (my pc is acting funny)
 original_connector = aiohttp.TCPConnector
@@ -247,5 +265,6 @@ class NoSSLConnector(aiohttp.TCPConnector):
 
 aiohttp.TCPConnector = NoSSLConnector
 
+keep_alive() ## little sneaky trick
 # Run bot
 bot.run(token, log_handler=handler, log_level=logging.DEBUG)
