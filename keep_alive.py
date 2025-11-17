@@ -9,7 +9,7 @@ log.setLevel(logging.ERROR)
 
 @app.route('/')
 def home():
-    return "Bot is running!"
+    return "Gaming and Jaming!"
 
 def run():
     try:
