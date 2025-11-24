@@ -286,6 +286,7 @@ async def submit_wildcard(interaction: discord.Interaction, wildcard: str):
     await interaction.response.send_message(embed=embed, view=WildcardVoteView(wildcard_id))
 
 
+ADMIN_ROLE_ID = 1440756072532152360
 @bot.tree.command(name="theme_results", description="(ADMIN ONLY) View current theme idea voting results")
 async def theme_results(interaction: discord.Interaction):
     try:
@@ -295,7 +296,7 @@ async def theme_results(interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
         print("Response deferred")
 
-        ADMIN_ROLE_ID = 760156780822003743
+
         if not any(role.id == ADMIN_ROLE_ID for role in interaction.user.roles):
             await interaction.followup.send(">:C hey, no cheating, only admins can see this!!!! ", ephemeral=True)
             return
@@ -371,7 +372,7 @@ async def wildcard_results(interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
         print("Response deferred")
 
-        ADMIN_ROLE_ID = 760156780822003743
+        ADMIN_ROLE_ID = 1440756072532152360
         if not any(role.id == ADMIN_ROLE_ID for role in interaction.user.roles):
             await interaction.followup.send(">:C hey, no cheating, only admins can see this!!!! ", ephemeral=True)
             return
